@@ -8,13 +8,13 @@ DEVBOX_RAW="https://raw.githubusercontent.com/junoput/devbox/main"
 DEVBOX_DIR="/opt/devbox"
 
 log()  { echo "▶ $*"; }
-done() { echo "✓ $*"; }
+ok() { echo "✓ $*"; }
 
 # ── System ────────────────────────────────────────────────────────────────────
 log "Updating system packages"
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
-done "system updated"
+ok "system updated"
 
 # ── Core tools ────────────────────────────────────────────────────────────────
 log "Installing core tools"
@@ -29,14 +29,14 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   openssh-client openssh-server \
   sqlite3 \
   2>/dev/null
-done "core tools installed"
+ok "core tools installed"
 
 # ── yq ────────────────────────────────────────────────────────────────────────
 if ! command -v yq &>/dev/null; then
   log "Installing yq"
   curl -sL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" -o /usr/local/bin/yq
   chmod +x /usr/local/bin/yq
-  done "yq installed"
+  ok "yq installed"
 fi
 
 # ── GitHub CLI ────────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ if ! command -v gh &>/dev/null; then
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
     > /etc/apt/sources.list.d/github-cli.list
   apt-get update -qq && apt-get install -y gh 2>/dev/null
-  done "gh installed"
+  ok "gh installed"
 fi
 
 # ── Node.js (LTS via NodeSource) ──────────────────────────────────────────────
@@ -55,14 +55,14 @@ if ! command -v node &>/dev/null; then
   log "Installing Node.js LTS"
   curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - 2>/dev/null
   apt-get install -y nodejs 2>/dev/null
-  done "node $(node --version) installed"
+  ok "node installed"
 fi
 
 # ── Claude Code ───────────────────────────────────────────────────────────────
 if ! command -v claude &>/dev/null; then
   log "Installing Claude Code"
   npm install -g @anthropic-ai/claude-code 2>/dev/null
-  done "claude code installed"
+  ok "claude code installed"
 fi
 
 # ── Caveman plugin ────────────────────────────────────────────────────────────
@@ -92,14 +92,14 @@ driver = "overlay"
 mount_program = "/usr/bin/fuse-overlayfs"
 EOF
   echo 'export BUILDAH_ISOLATION=chroot' > /etc/profile.d/buildah.sh
-  done "podman installed"
+  ok "podman installed"
 fi
 
 # ── zsh + oh-my-zsh ──────────────────────────────────────────────────────────
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
   log "Installing oh-my-zsh"
   RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" 2>/dev/null
-  done "oh-my-zsh installed"
+  ok "oh-my-zsh installed"
 fi
 
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
@@ -143,7 +143,7 @@ EOF
 
 # Set zsh as default shell
 chsh -s "$(which zsh)" root
-done "zsh configured"
+ok "zsh configured"
 
 # ── tmux config ───────────────────────────────────────────────────────────────
 if [ ! -f "$HOME/.tmux.conf" ]; then
@@ -185,7 +185,7 @@ else
   git clone --quiet "$DEVBOX_REPO" "$DEVBOX_DIR"
 fi
 chmod +x "$DEVBOX_DIR"/**/*.sh 2>/dev/null || true
-done "devbox scripts at $DEVBOX_DIR"
+ok "devbox scripts at $DEVBOX_DIR"
 
 # ── Git global config ─────────────────────────────────────────────────────────
 git config --global core.editor nvim
