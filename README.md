@@ -2,10 +2,17 @@
 
 Generic dev VM provisioner. Scripts for building and maintaining Debian 12 LXC dev environments.
 
+## Quick start
+
+```bash
+# On fresh Debian 12 LXC as root:
+bash <(curl -fsSL https://raw.githubusercontent.com/junoput/devbox/main/setup.sh)
+```
+
 ## How it works
 
 1. Create fresh Debian 12 LXC on Proxmox
-2. Run `setup.sh` — installs all base tools, generates GitHub SSH key, clones this repo to `/opt/devbox`
+2. Run the one-liner above — installs all base tools, generates GitHub SSH key, clones this repo to `/opt/devbox`
 3. Snapshot LXC as `base-dev-ready`
 4. Clone snapshot for each project
 5. Run `provision.sh` on the clone — pull latest scripts, pick extra tools via wizard

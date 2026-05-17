@@ -4,6 +4,7 @@
 set -euo pipefail
 
 DEVBOX_REPO="https://github.com/junoput/devbox"
+DEVBOX_RAW="https://raw.githubusercontent.com/junoput/devbox/main"
 DEVBOX_DIR="/opt/devbox"
 
 log()  { echo "▶ $*"; }
