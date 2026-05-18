@@ -13,7 +13,7 @@ fi
 
 if [ ! -f /usr/local/bin/github-app-token ]; then
   echo "▶ Installing github-app-token helper"
-  pip3 install --quiet jwt cryptography requests
+  pip3 install --quiet --break-system-packages jwt cryptography requests
   cat > /usr/local/bin/github-app-token << 'PYEOF'
 #!/usr/bin/env python3
 import os, time, json, jwt, requests
@@ -61,8 +61,8 @@ pull_repo "$WORKSPACE/orbit-dashboard"      "ClubOrbit/orbit-dashboard"
 pull_repo "$WORKSPACE/orbit-telemetry"      "ClubOrbit/orbit-telemetry"
 pull_repo "$WORKSPACE/orbit-backup"         "ClubOrbit/orbit-backup"
 
-echo "▶ Running dev-setup.sh"
-bash /root/dev-setup.sh
+echo "▶ Running dev setup"
+bash "$DEV_DIR/deploy/dev/setup.sh"
 
 echo "✓ ClubOrbit dev environment ready"
 echo "  App: http://$(hostname -I | awk '{print $1}')"
