@@ -13,7 +13,7 @@ fi
 
 if [ ! -f /usr/local/bin/github-app-token ]; then
   echo "▶ Installing github-app-token helper"
-  pip3 install --quiet --break-system-packages jwt cryptography requests
+  pip3 install --quiet --break-system-packages PyJWT cryptography requests
   cat > /usr/local/bin/github-app-token << 'PYEOF'
 #!/usr/bin/env python3
 import os, time, json, jwt, requests
