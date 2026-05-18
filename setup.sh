@@ -88,6 +88,9 @@ EOF
   cat > /etc/containers/storage.conf << 'EOF'
 [storage]
 driver = "overlay"
+runroot = "/run/containers/storage"
+graphroot = "/var/lib/containers/storage"
+
 [storage.options.overlay]
 mount_program = "/usr/bin/fuse-overlayfs"
 EOF
