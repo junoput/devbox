@@ -52,7 +52,7 @@ pull_repo() {
 
 echo "▶ Pulling ClubOrbit repos"
 WORKSPACE="$DEV_DIR/workspace"
-pull_repo "$DEV_DIR"                        "ClubOrbit/cluborbit"
+pull_repo "$WORKSPACE/cluborbit"            "ClubOrbit/cluborbit"
 pull_repo "$WORKSPACE/event-planner"        "ClubOrbit/event-planner"
 pull_repo "$WORKSPACE/confirmo"             "ClubOrbit/confirmo"
 pull_repo "$WORKSPACE/bulk-buzz"            "ClubOrbit/bulk-buzz"
@@ -62,7 +62,7 @@ pull_repo "$WORKSPACE/orbit-telemetry"      "ClubOrbit/orbit-telemetry"
 pull_repo "$WORKSPACE/orbit-backup"         "ClubOrbit/orbit-backup"
 
 echo "▶ Running dev setup"
-bash "$DEV_DIR/deploy/dev/setup.sh"
+bash "$WORKSPACE/cluborbit/deploy/dev/setup.sh"
 
 echo "✓ ClubOrbit dev environment ready"
 echo "  App: http://$(hostname -I | awk '{print $1}')"
