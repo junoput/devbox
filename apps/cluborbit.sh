@@ -69,8 +69,7 @@ bash "$WORKSPACE/cluborbit/deploy/dev/setup.sh" --no-pull
 echo "▶ Fixing nginx resolver"
 PODMAN_DNS=$(podman network inspect cluborbit_shared --format '{{range .Subnets}}{{.Gateway}}{{end}}' 2>/dev/null || echo "")
 if [ -n "$PODMAN_DNS" ]; then
-  podman exec proxy sed -i "s/10\.[0-9]*\.[0-9]*\.[0-9]* valid=10s/$PODMAN_DNS valid=10s/g" /etc/nginx/conf.d/default.conf 2>/dev/null && \
-    podman exec proxy nginx -s reload 2>/dev/null && \
+  podman exec proxy sh -c "sed -i 's/[0-9]*\.[0-9]*\.[0-9]*\.[0-9]* valid=10s/$PODMAN_DNS valid=10s/g' /etc/nginx/conf.d/default.conf && nginx -s reload" 2>/dev/null && \
     echo "✓ nginx resolver set to $PODMAN_DNS"
 fi
 
