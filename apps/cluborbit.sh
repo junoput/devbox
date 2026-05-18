@@ -64,6 +64,16 @@ pull_repo "$WORKSPACE/orbit-backup"         "ClubOrbit/orbit-backup"
 echo "▶ Running dev setup"
 bash "$WORKSPACE/cluborbit/deploy/dev/setup.sh" --no-pull
 
+# Fix nginx resolver: template hardcodes 10.94.0.1 but podman DNS IP varies per host.
+# Detect actual DNS from cluborbit_shared network gateway and patch in-container config.
+echo "▶ Fixing nginx resolver"
+PODMAN_DNS=$(podman network inspect cluborbit_shared --format '{{range .Subnets}}{{.Gateway}}{{end}}' 2>/dev/null || echo "")
+if [ -n "$PODMAN_DNS" ]; then
+  podman exec proxy sed -i "s/10\.[0-9]*\.[0-9]*\.[0-9]* valid=10s/$PODMAN_DNS valid=10s/g" /etc/nginx/conf.d/default.conf 2>/dev/null && \
+    podman exec proxy nginx -s reload 2>/dev/null && \
+    echo "✓ nginx resolver set to $PODMAN_DNS"
+fi
+
 echo "✓ ClubOrbit dev environment ready"
 echo "  App: http://$(hostname -I | awk '{print $1}')"
 echo "  Orbit: http://$(hostname -I | awk '{print $1}'):4101"
