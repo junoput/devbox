@@ -60,9 +60,11 @@ pull_repo "$WORKSPACE/members"              "ClubOrbit/members"
 pull_repo "$WORKSPACE/orbit-dashboard"      "ClubOrbit/orbit-dashboard"
 pull_repo "$WORKSPACE/orbit-telemetry"      "ClubOrbit/orbit-telemetry"
 pull_repo "$WORKSPACE/orbit-backup"         "ClubOrbit/orbit-backup"
+pull_repo "$WORKSPACE/person-db"            "ClubOrbit/person-db"
+pull_repo "$WORKSPACE/packages"             "ClubOrbit/packages"
 
 echo "▶ Running dev setup"
-bash "$WORKSPACE/cluborbit/deploy/dev/setup.sh"
+bash "$WORKSPACE/cluborbit/deploy/dev/setup.sh" --no-pull
 
 echo "✓ ClubOrbit dev environment ready"
 echo "  App: http://$(hostname -I | awk '{print $1}')"
