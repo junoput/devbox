@@ -33,6 +33,9 @@ pull_repo "$WORKSPACE/orbit-backup"         "ClubOrbit/orbit-backup"
 echo "▶ Running dev setup"
 bash "$WORKSPACE/cluborbit/deploy/dev/setup.sh" --no-pull
 
+echo "▶ Configuring Keycloak realm"
+bash "$WORKSPACE/cluborbit/keycloak/setup-dev-realm.sh"
+
 CONTEXT_FILE="$WORKSPACE/AGENT_CONTEXT.md"
 if [ ! -f "$CONTEXT_FILE" ]; then
   echo "▶ Creating initial AGENT_CONTEXT.md"
