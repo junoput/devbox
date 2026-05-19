@@ -66,14 +66,10 @@ if ! command -v claude &>/dev/null; then
 fi
 
 # ── Caveman plugin ────────────────────────────────────────────────────────────
-CAVEMAN_DIR="$HOME/.claude/plugins/caveman"
-if [ ! -d "$CAVEMAN_DIR" ]; then
+if [ ! -f "$HOME/.claude/hooks/caveman-activate.js" ]; then
   log "Installing caveman plugin"
-  mkdir -p "$CAVEMAN_DIR"
-  # Install via claude plugin command if available
-  claude plugin install caveman 2>/dev/null || \
-    git clone https://github.com/junoput/caveman-claude "$CAVEMAN_DIR" 2>/dev/null || \
-    log "caveman: install manually after setup"
+  curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash
+  ok "caveman installed"
 fi
 
 # ── Podman ────────────────────────────────────────────────────────────────────
