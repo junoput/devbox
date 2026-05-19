@@ -40,8 +40,13 @@ pull_repo() {
   local dir="$1" repo="$2"
   if [ -d "$dir/.git" ]; then
     git -C "$dir" remote set-url origin "https://x-access-token:${TOKEN}@github.com/${repo}"
-    git -C "$dir" fetch --quiet origin main
-    git -C "$dir" reset --hard origin/main
+    git -C "$dir" fetch --quiet --all
+    if git -C "$dir" show-ref --quiet refs/remotes/origin/dev; then
+      git -C "$dir" checkout dev --quiet 2>/dev/null || git -C "$dir" checkout -b dev origin/dev --quiet
+      git -C "$dir" reset --hard origin/dev --quiet
+    else
+      git -C "$dir" reset --hard origin/main --quiet
+    fi
     git -C "$dir" remote set-url origin "https://github.com/${repo}"
   else
     mkdir -p "$(dirname "$dir")"
