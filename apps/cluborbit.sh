@@ -1,45 +1,11 @@
 # desc: ClubOrbit dev environment (pull all repos, configure Podman stack)
 set -euo pipefail
 
-SECRETS=/root/.secrets/github-app.env
 DEV_DIR=/opt/dev
-
-if [ ! -f "$SECRETS" ]; then
-  echo "ERROR: $SECRETS missing. Copy GitHub App credentials first:"
-  echo "  mkdir -p /root/.secrets && chmod 700 /root/.secrets"
-  echo "  cat > $SECRETS   # paste GITHUB_APP_ID, GITHUB_INSTALL_ID, GITHUB_APP_PEM"
-  exit 1
-fi
-
-if [ ! -f /usr/local/bin/github-app-token ]; then
-  echo "▶ Installing github-app-token helper"
-  pip3 install --quiet --break-system-packages PyJWT cryptography requests
-  cat > /usr/local/bin/github-app-token << 'PYEOF'
-#!/usr/bin/env python3
-import os, time, json, jwt, requests
-app_id  = os.environ["GITHUB_APP_ID"]
-inst_id = os.environ["GITHUB_INSTALL_ID"]
-pem     = open(os.environ["GITHUB_APP_PEM"]).read()
-now     = int(time.time())
-payload = {"iat": now - 60, "exp": now + 540, "iss": app_id}
-token   = jwt.encode(payload, pem, algorithm="RS256")
-r = requests.post(
-  f"https://api.github.com/app/installations/{inst_id}/access_tokens",
-  headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
-)
-print(r.json()["token"])
-PYEOF
-  chmod +x /usr/local/bin/github-app-token
-fi
-
-set -a; source "$SECRETS"; set +a
-TOKEN=$(GITHUB_APP_ID="$GITHUB_APP_ID" GITHUB_INSTALL_ID="$GITHUB_INSTALL_ID" \
-  GITHUB_APP_PEM="$GITHUB_APP_PEM" /usr/local/bin/github-app-token)
 
 pull_repo() {
   local dir="$1" repo="$2"
   if [ -d "$dir/.git" ]; then
-    git -C "$dir" remote set-url origin "https://x-access-token:${TOKEN}@github.com/${repo}"
     git -C "$dir" fetch --quiet --all
     if git -C "$dir" show-ref --quiet refs/remotes/origin/dev; then
       git -C "$dir" checkout dev --quiet 2>/dev/null || git -C "$dir" checkout -b dev origin/dev --quiet
@@ -47,11 +13,9 @@ pull_repo() {
     else
       git -C "$dir" reset --hard origin/main --quiet
     fi
-    git -C "$dir" remote set-url origin "https://github.com/${repo}"
   else
     mkdir -p "$(dirname "$dir")"
-    git clone --quiet "https://x-access-token:${TOKEN}@github.com/${repo}" "$dir"
-    git -C "$dir" remote set-url origin "https://github.com/${repo}"
+    git clone --quiet "git@github.com:${repo}" "$dir"
   fi
 }
 
@@ -140,7 +104,7 @@ podman-compose build <service> && podman-compose up -d <service>
 ## Known issues / gotchas
 
 - Keycloak takes ~2 min to start — dev-gateway stays unhealthy until it's up
-- All repos are private (ClubOrbit org) — push requires GitHub credentials, not the App token
+- All repos are private (ClubOrbit org) — push via SSH (VM key registered on GitHub)
 - Hot reload: edit files in workspace/ directly; browser updates automatically
 - Podman network \`cluborbit_shared\` must use subnet 10.94.0.0/24 (gateway 10.94.0.1) for nginx resolver
 

@@ -62,22 +62,18 @@ runs selected scripts
 
 ### apps/cluborbit.sh — ClubOrbit dev environment
 
-**Run on:** LXC 108 (or any clone of base-dev-ready with secrets)  
+**Run on:** LXC 108 (or any clone of base-dev-ready)  
 **How:** `bash /opt/devbox/apps/cluborbit.sh`  
 **Also used to update:** re-running pulls latest `dev` branch for all repos and restarts stack  
 
-**Requires secrets at `/root/.secrets/`:**
-- `github-app.env` — GitHub App credentials (GITHUB_APP_ID, GITHUB_INSTALL_ID, GITHUB_APP_PEM path)
-- `github-app.pem` — GitHub App private key
+**Requires:** VM SSH key registered on GitHub (org member or deploy key with write access).
+The base snapshot key is `SHA256:13Bux1LuUG+SW3D/Hmg/lTt/HcropYp0nq3s89dkwMM` — already added.
 
 **What it does:**
-1. Installs PyJWT, cryptography, requests (pip)
-2. Gets GitHub App installation token (10-min expiry)
-3. Clones/updates all ClubOrbit repos to `/opt/dev/workspace/` on `dev` branch:
+1. Clones/updates all ClubOrbit repos via SSH to `/opt/dev/workspace/` on `dev` branch:
    - cluborbit, event-planner, confirmo, bulk-buzz, members,
      orbit-dashboard, orbit-telemetry, orbit-backup
-4. Runs `deploy/dev/setup.sh --no-pull` — starts full Podman dev stack
-5. Fixes nginx resolver IP (podman DNS gateway, auto-detected)
+2. Runs `deploy/dev/setup.sh --no-pull` — starts full Podman dev stack
 
 **Dev stack layout after install:**
 ```
