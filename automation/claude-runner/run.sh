@@ -41,6 +41,12 @@ done
 
 [[ -z "$PROMPT_TEXT" ]] && { echo "ERROR: --prompt or --prompt-file required"; exit 1; }
 
+# Auto-include context files if they exist
+VM_CONTEXT="/opt/devbox/automation/claude-runner/vm-context.md"
+APP_CONTEXT="$WORKSPACE/AGENT_CONTEXT.md"
+[[ -f "$VM_CONTEXT"  && ! " ${CONTEXT_FILES[*]} " =~ "$VM_CONTEXT"  ]] && CONTEXT_FILES=("$VM_CONTEXT"  "${CONTEXT_FILES[@]}")
+[[ -f "$APP_CONTEXT" && ! " ${CONTEXT_FILES[*]} " =~ "$APP_CONTEXT" ]] && CONTEXT_FILES=("$APP_CONTEXT" "${CONTEXT_FILES[@]}")
+
 # ── Telegram ──────────────────────────────────────────────────
 
 notify() {
@@ -67,10 +73,17 @@ fi
   for f in "${CONTEXT_FILES[@]}"; do
     echo ""
     echo "---"
-    echo "# Context: $f"
+    echo "# Context: $(basename "$f")"
     echo ""
     cat "$f"
   done
+  echo ""
+  echo "---"
+  echo "# Required: update agent context"
+  echo ""
+  echo "When the task is complete, update \`$APP_CONTEXT\` — append a row to the Session log"
+  echo "table and update any sections that changed (Known issues, Stack overview, etc.)."
+  echo "Format: | $(date +%Y-%m-%d) | Claude | \${BRANCH:-current branch} | <one-line summary> |"
 } > "$TASK_FILE"
 
 echo "▶ Task written to $TASK_FILE"
