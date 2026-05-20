@@ -60,6 +60,18 @@ notify() {
 
 # ── Branch setup ──────────────────────────────────────────────
 
+if [[ -z "$BRANCH" ]]; then
+  CURRENT_BRANCH=$(git -C "$WORKSPACE" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+  if [[ "$CURRENT_BRANCH" == "dev" || "$CURRENT_BRANCH" == "main" ]]; then
+    SLUG=$(echo "$PROMPT_TEXT" | sed 's/^feature\///i' | tr '[:upper:]' '[:lower:]' \
+      | tr -cs 'a-z0-9 ' ' ' | tr ' ' '-' | cut -d- -f1-6 | sed 's/-*$//')
+    SLUG="${SLUG:0:50}"
+    if [[ -n "$SLUG" ]]; then
+      BRANCH="feature/$SLUG"
+    fi
+  fi
+fi
+
 if [[ -n "$BRANCH" ]]; then
   cd "$WORKSPACE"
   git checkout -b "$BRANCH" 2>/dev/null || git checkout "$BRANCH"
@@ -151,6 +163,32 @@ while tmux has-session -t "$SESSION" 2>/dev/null; do
     EXIT_CODE=$(grep "^EXIT_CODE:" "$LOG" | tail -1 | cut -d: -f2 | tr -d '[:space:]')
     LAST_LINES=$(grep -v "^EXIT_CODE:" "$LOG" | tail -8 | tr '\n' ' ')
     if [[ "$EXIT_CODE" == "0" ]]; then
+      if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
+        CURRENT_HEAD=$(git -C "$WORKSPACE" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+        if [[ "$CURRENT_HEAD" == feature/* ]]; then
+          PR_URL=$(gh pr create \
+            --repo ClubOrbit/cluborbit \
+            --base dev \
+            --head "$CURRENT_HEAD" \
+            --title "$(git -C "$WORKSPACE" log -1 --pretty=%s)" \
+            --body "Automated PR from claude-runner session.
+
+Task:
+$(head -5 "$TASK_FILE")
+
+---
+_Created by claude-runner_" 2>/dev/null || echo "")
+          if [[ -n "$PR_URL" ]]; then
+            notify "🔀 *PR created*
+$PR_URL
+Branch: \`$CURRENT_HEAD\`
+Review and merge: $PR_URL"
+            echo "▶ PR: $PR_URL"
+          fi
+        fi
+      else
+        echo "▶ Skipping PR creation (gh not authenticated)"
+      fi
       notify "✅ *Claude finished successfully*
 Branch: \`${BRANCH:-current}\`
 

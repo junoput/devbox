@@ -289,3 +289,30 @@ Add email verification to member registration.
 - Add tests in backend/tests/
 - Commit: feat(members): add email verification
 ```
+
+## Claude Runner — PR automation
+
+`/opt/devbox/automation/claude-runner/run.sh` runs Claude Code autonomously on a task inside a tmux session.
+
+### Auto feature branches
+
+When `--branch` is not provided and the workspace is on `dev` or `main`, the runner automatically creates a feature branch. The branch name is slugged from the first 6 words of the prompt:
+
+```
+"Fix confirmo healthcheck nginx route" → feature/fix-confirmo-healthcheck-nginx-route
+```
+
+Use `--branch` to override: `run.sh --branch feature/my-branch --prompt "..."`.
+
+### PR creation on success
+
+After a successful run (exit 0), if the workspace is on a `feature/*` branch and `gh` is authenticated, the runner automatically opens a PR against `dev` using the last commit message as the title.
+
+Requires: `gh auth login` on the VM before running.
+
+### Prod-guard CI
+
+PRs to `main` in the cluborbit repo are gated by `.github/workflows/prod-guard.yml`, which blocks any PR touching:
+- `deploy/dev/` — dev compose config
+- `AGENT_CONTEXT.md` — agent session log
+- `*.dev.{js,ts,jsx,tsx,json}` — dev-only source files
