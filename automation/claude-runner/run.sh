@@ -90,27 +90,29 @@ echo "▶ Task written to $TASK_FILE"
 
 # ── Wrapper script (avoids quoting issues in tmux) ────────────
 
-# If running as root, delegate to claude user (--dangerously-skip-permissions blocked as root)
-CLAUDE_CMD="claude --dangerously-skip-permissions"
-if [ "$(id -u)" -eq 0 ]; then
-  if id claude &>/dev/null; then
-    chown -R claude:claude "$WORKSPACE" 2>/dev/null || true
-    CLAUDE_CMD="su -s /bin/bash claude -c 'cd \"$WORKSPACE\" && claude --dangerously-skip-permissions'"
-  else
-    echo "WARNING: running as root and no 'claude' user found — claude will refuse --dangerously-skip-permissions"
-    echo "Run setup.sh to create the claude user, or create it manually."
-  fi
-fi
-
 cat > "$WRAPPER" << WRAPPER_EOF
 #!/usr/bin/env bash
 set -o pipefail
 cd "$WORKSPACE"
 PROMPT=\$(cat "$TASK_FILE")
-$CLAUDE_CMD "\$PROMPT" 2>&1 | tee "$LOG"
+claude --dangerously-skip-permissions "\$PROMPT" 2>&1 | tee "$LOG"
 echo "EXIT_CODE:\${PIPESTATUS[0]}" >> "$LOG"
 WRAPPER_EOF
 chmod +x "$WRAPPER"
+
+# If running as root, run wrapper as claude user (--dangerously-skip-permissions blocked as root)
+if [ "$(id -u)" -eq 0 ]; then
+  if id claude &>/dev/null; then
+    chown -R claude:claude "$WORKSPACE" 2>/dev/null || true
+    chmod +r "$TASK_FILE" "$WRAPPER"
+    TMUX_RUN="su -s /bin/bash claude -c 'bash $WRAPPER'"
+  else
+    echo "WARNING: no 'claude' user found — run setup.sh to create it"
+    TMUX_RUN="bash $WRAPPER"
+  fi
+else
+  TMUX_RUN="bash $WRAPPER"
+fi
 
 # ── Launch tmux session ───────────────────────────────────────
 
@@ -121,7 +123,7 @@ if [ -S "$TMUX_SOCK" ] && ! tmux list-sessions &>/dev/null; then
 fi
 
 tmux kill-session -t "$SESSION" 2>/dev/null || true
-tmux new-session -d -s "$SESSION" "bash $WRAPPER"
+tmux new-session -d -s "$SESSION" "$TMUX_RUN"
 
 VM_IP=$(hostname -I | awk '{print $1}')
 notify "🤖 *Claude runner started*
