@@ -194,6 +194,13 @@ su -s /bin/bash claude -c '
   git config --global init.defaultBranch main
   git config --global pull.rebase false
 '
+# Copy gh credentials if root is authenticated
+if [ -f "$HOME/.config/gh/hosts.yml" ]; then
+  mkdir -p /home/claude/.config/gh
+  cp "$HOME/.config/gh/hosts.yml" /home/claude/.config/gh/hosts.yml
+  chown -R claude:claude /home/claude/.config/gh
+  chmod 600 /home/claude/.config/gh/hosts.yml
+fi
 ok "claude user ready"
 
 # ── Clone/update devbox repo ──────────────────────────────────────────────────
