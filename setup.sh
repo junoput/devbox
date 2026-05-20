@@ -175,6 +175,27 @@ if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
     echo "⚠ GitHub auth not confirmed — add key and test manually: ssh -T git@github.com"
 fi
 
+# ── claude user (runs Claude Code — blocked as root with --dangerously-skip-permissions) ──
+if ! id claude &>/dev/null; then
+  log "Creating claude user"
+  useradd -m -s /bin/bash claude
+fi
+# Ensure SSH key copied (needed for git push to GitHub)
+mkdir -p /home/claude/.ssh && chmod 700 /home/claude/.ssh
+cp "$HOME/.ssh/id_ed25519" /home/claude/.ssh/id_ed25519
+cp "$HOME/.ssh/id_ed25519.pub" /home/claude/.ssh/id_ed25519.pub
+[ -f "$HOME/.ssh/known_hosts" ] && cp "$HOME/.ssh/known_hosts" /home/claude/.ssh/known_hosts
+chown -R claude:claude /home/claude/.ssh && chmod 600 /home/claude/.ssh/id_ed25519
+# Git config
+su -s /bin/bash claude -c '
+  git config --global user.email "claude@devbox"
+  git config --global user.name "Claude Dev"
+  git config --global core.editor nvim
+  git config --global init.defaultBranch main
+  git config --global pull.rebase false
+'
+ok "claude user ready"
+
 # ── Clone/update devbox repo ──────────────────────────────────────────────────
 if [ -d "$DEVBOX_DIR/.git" ]; then
   log "Updating devbox scripts"
