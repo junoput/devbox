@@ -102,6 +102,12 @@ chmod +x "$WRAPPER"
 
 # ── Launch tmux session ───────────────────────────────────────
 
+# Clean stale default socket (left behind when tmux server crashes)
+TMUX_SOCK="/tmp/tmux-$(id -u)/default"
+if [ -S "$TMUX_SOCK" ] && ! tmux list-sessions &>/dev/null; then
+  rm -f "$TMUX_SOCK"
+fi
+
 tmux kill-session -t "$SESSION" 2>/dev/null || true
 tmux new-session -d -s "$SESSION" "bash $WRAPPER"
 
