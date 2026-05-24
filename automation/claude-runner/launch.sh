@@ -5,6 +5,8 @@
 # Usage:
 #   launch.sh --prompt "Add dark mode to shell"
 #   launch.sh --prompt-file /tmp/task.md --branch feature/my-feature [--context file...]
+#   launch.sh --prompt "Quick fix" --model haiku --effort low --no-review
+#   launch.sh --prompt "Security audit" --model opus --effort high --max-turns 80
 #
 # Requires: config.env alongside this script (copy from config.env.example)
 #
@@ -26,15 +28,25 @@ source "$SCRIPT_DIR/config.env"
 BRANCH=""
 PROMPT_TEXT=""
 CONTEXT_FILES=()
+CLAUDE_MODEL="${CLAUDE_MODEL:-}"
+CLAUDE_EFFORT="${CLAUDE_EFFORT:-}"
+MAX_TURNS="${MAX_TURNS:-}"
+NO_PREFLIGHT="${NO_PREFLIGHT:-false}"
+NO_REVIEW="${NO_REVIEW:-false}"
 
 # ── Parse args ────────────────────────────────────────────────
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --prompt)       PROMPT_TEXT="$2";          shift 2 ;;
-    --prompt-file)  PROMPT_TEXT="$(cat "$2")"; shift 2 ;;
-    --context)      CONTEXT_FILES+=("$2");     shift 2 ;;
-    --branch)       BRANCH="$2";              shift 2 ;;
+    --prompt)        PROMPT_TEXT="$2";          shift 2 ;;
+    --prompt-file)   PROMPT_TEXT="$(cat "$2")"; shift 2 ;;
+    --context)       CONTEXT_FILES+=("$2");     shift 2 ;;
+    --branch)        BRANCH="$2";               shift 2 ;;
+    --model)         CLAUDE_MODEL="$2";         shift 2 ;;
+    --effort)        CLAUDE_EFFORT="$2";        shift 2 ;;
+    --max-turns)     MAX_TURNS="$2";            shift 2 ;;
+    --no-preflight)  NO_PREFLIGHT=true;         shift ;;
+    --no-review)     NO_REVIEW=true;            shift ;;
     *) echo "Unknown arg: $1"; exit 1 ;;
   esac
 done
@@ -143,6 +155,11 @@ TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
 TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
 WORKSPACE=${WORKSPACE}
 IDLE_TIMEOUT=${IDLE_TIMEOUT:-120}
+CLAUDE_MODEL=${CLAUDE_MODEL:-}
+CLAUDE_EFFORT=${CLAUDE_EFFORT:-}
+MAX_TURNS=${MAX_TURNS:-50}
+NO_PREFLIGHT=${NO_PREFLIGHT}
+NO_REVIEW=${NO_REVIEW}
 EOF
 
 # ── Build and transfer prompt ─────────────────────────────────
@@ -168,11 +185,19 @@ echo "▶ Launching Claude runner on $NEW_IP..."
 BRANCH_ARG=""
 [[ -n "$BRANCH" ]] && BRANCH_ARG="--branch $BRANCH"
 
-vm "nohup bash -c 'source /root/runner.env && bash $RUNNER_PATH --prompt-file /root/task.md $BRANCH_ARG > /root/launch.log 2>&1' &"
+EXTRA_ARGS=""
+[[ -n "$CLAUDE_MODEL"  ]] && EXTRA_ARGS+=" --model $CLAUDE_MODEL"
+[[ -n "$CLAUDE_EFFORT" ]] && EXTRA_ARGS+=" --effort $CLAUDE_EFFORT"
+[[ -n "$MAX_TURNS"     ]] && EXTRA_ARGS+=" --max-turns $MAX_TURNS"
+[[ "$NO_PREFLIGHT" == "true" ]] && EXTRA_ARGS+=" --no-preflight"
+[[ "$NO_REVIEW"    == "true" ]] && EXTRA_ARGS+=" --no-review"
+
+vm "nohup bash -c 'source /root/runner.env && bash $RUNNER_PATH --prompt-file /root/task.md $BRANCH_ARG $EXTRA_ARGS > /root/launch.log 2>&1' &"
 
 notify "🚀 *Claude dev VM launched*
 ID: \`$NEW_ID\` — IP: \`$NEW_IP\`
 Branch: \`${BRANCH:-current}\`
+Model: \`${CLAUDE_MODEL:-auto}\`  Effort: \`${CLAUDE_EFFORT:-auto}\`
 
 SSH in: \`ssh root@${NEW_IP}\`
 Attach Claude: \`tmux attach -t claude-runner\`
